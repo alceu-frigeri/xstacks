@@ -1,13 +1,10 @@
-<PackageNAME>
+xstacks
 ==========
 
-Template for LaTeX packages ...
-
-<PackageDescription>
+- dedicated global stack(s) implementations
 
 For more details,  see the documentation,
-[<PackageNAME>.pdf](http://mirrors.ctan.org/macros/latex/contrib/<PackageNAME>/doc/<PackageNAME>.pdf)
-[<PackageNAME>.pdf](http://mirrors.ctan.org/graphics/pgf/contrib/<PackageNAME>/doc/<PackageNAME>.pdf)
+[xstacks.pdf](http://mirrors.ctan.org/macros/latex/contrib/xstacks/doc/xstacks.pdf)
 	
 --------------
 
@@ -16,12 +13,12 @@ For more details,  see the documentation,
 (with the new in kernel *\ProcessKeyOptions* and *\NewDocumentCommand*).
 
 ## Installation
-The stable version is available at [CTAN](https://ctan.org/pkg/<PackageNAME>).
+The stable version is available at [CTAN](https://ctan.org/pkg/xstacks).
 
 ## Usage
 Just place
 ```latex
-  \usepackage{<PackageNAME>}
+  \usepackage{xstacks}
 ```
 
 in the preamble and compile away.
@@ -29,15 +26,13 @@ in the preamble and compile away.
 ## Contacting Author
 
 For bug reports and enhancement suggestions, the preferred way is to use
-[the project's issue page](https://github.com/alceu-frigeri/<PackageNAME>/issues).
+[the project's issue page](https://github.com/alceu-frigeri/xstacks/issues).
 Please be ready to provide an example code showing the bug, if any.
 
-Please do not use the issue page for generic help on how to use the package.
-
-* git: https://github.com/alceu-frigeri/<PackageNAME>
+* git: https://github.com/alceu-frigeri/xstacks
 
 -------------
-Copyright 2025-present by Alceu Frigeri
+Copyright 2026-present by Alceu Frigeri
 
  This work may be distributed and/or modified under the
  conditions of
@@ -53,33 +48,22 @@ The Current Maintainer of this work is Alceu Frigeri
 
 ### This work consist of the files
 
-* <PackageNAME>.sty
+* xstacks.sty
     - the package itself
 
 * README.md  (this file)
     - quick introduction
 
-* <PackageNAME>.bib
-* <PackageNAME>.tex
+* xstacks.bib
+* xstacks.tex
     - package documentation
     
-* <PackageNAME>.pdf
+* xstacks.pdf
     - documentation in PDF format
     
 -------------
 
 ### Change log
-* Version 1.0d (this)
-  - typos, added silence option
 
-* Version 1.0c
-  - using \pkginfograbProvidesExplPackage
-
-* Version 1.0b
-  - requiring {pkginfo} now.
-
-* Version 1.0a
-  - some typos. added biber template.
-
-* Version 1.0
-    - Initial setup.
+* Version 1.0 (this)
+    - Initial setup/release.

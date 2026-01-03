@@ -1,0 +1,267 @@
+%%%==============================================================================
+%% Copyright 2026-present by Alceu Frigeri
+%%
+%% This work may be distributed and/or modified under the conditions of
+%%
+%% * The [LaTeX Project Public License](http://www.latex-project.org/lppl.txt),
+%%   version 1.3c (or later), and/or
+%% * The [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html),
+%%   version 3 (or later)
+%%
+%% This work has the LPPL maintenance status *maintained*.
+%%
+%% The Current Maintainer of this work is Alceu Frigeri
+%%
+%% This is version {1.0} {2026/01/03}
+%%
+%% The list of files that compose this work can be found in the README.md file at
+%% https://ctan.org/pkg/xstacks
+%%
+%%%==============================================================================
+\NeedsTeXFormat{LaTeX2e}[2022/06/01]
+
+%%%%%%%
+%%%
+%%% Just an attempt at having my package's info in a regular way
+%%%   \pkginfograb_set:nn {<pkg-name>} { props} sets package info
+%%%
+%%%   \pkginfograbProvidesExplPackage {<pkg-name>} { props} sets package's info
+%%%     and calls \ProvidesExplPackage
+%%%
+%%%%%%%
+\RequirePackage{pkginfograb}
+\pkginfograbProvidesExplPackage {xstacks}
+  {
+     name        = {xstacks} ,
+     prefix      = {xstacks} ,
+     date        = {2026/01/03},
+     version     = {1.0} ,
+     description = {xstacks - dedicated global stack(s) implementations}
+  }
+%%%%%%%
+%%% End of cut-n-paste
+%%%%%%%
+
+%%%%%%%
+%%%  'pure' aftergroup
+%%%%%%%
+
+\int_new:N \l__xstacks_level_int
+\cs_new_protected:Npn \xstacks_groupmark:
+  {
+    \int_set_eq:NN \l__xstacks_level_int \currentgrouplevel
+    \int_incr:N \l__xstacks_level_int
+  }
+
+\cs_new_protected:Npn \xstacks_aftergroup:N #1
+  {
+    \if_int_compare:w \l__xstacks_level_int < \currentgrouplevel
+        \group_insert_after:N \xstacks_aftergroup:N 
+        \group_insert_after:N #1 
+    \else:
+        \group_insert_after:N #1 
+    \fi:
+  }
+
+%
+% The difference between \int_compare:nNnTF and \if_int_compare:w is brutal...
+%
+%\cs_new_protected:Npn \xstacks_aftergroup:N #1
+%  {
+%    \int_compare:nNnTF \l__xstacks_level_int < \currentgrouplevel
+%      { 
+%        \group_insert_after:N \xstacks_aftergroup:N 
+%        \group_insert_after:N #1 
+%      }
+%      { 
+%        \group_insert_after:N #1 
+%      }
+%  }
+
+
+%%%
+
+\cs_new_protected:Npn \xstacks_groupmark:N #1
+  {
+    \int_set_eq:NN #1 \currentgrouplevel
+    \int_incr:N #1
+  }
+
+\cs_new_protected:Npn \xstacks_aftergroup:NN #1#2
+  {
+    \if_int_compare:w #1 < \currentgrouplevel
+        \group_insert_after:N \xstacks_aftergroup:NN 
+        \group_insert_after:N #1 
+        \group_insert_after:N #2 
+    \else:
+        \group_insert_after:N #2 
+    \fi:
+  }
+
+%
+% The difference between \int_compare:nNnTF and \if_int_compare:w is brutal...
+%
+%\cs_new_protected:Npn \xstacks_aftergroup:NN #1#2
+%  {
+%    \int_compare:nNnTF #1 < \currentgrouplevel
+%      { 
+%        \group_insert_after:N \xstacks_aftergroup:NN 
+%        \group_insert_after:N #1 
+%        \group_insert_after:N #2 
+%      }
+%      { 
+%        \group_insert_after:N #2 
+%      }
+%  }
+
+%%%%%%%
+%%%  'cs' generate case.
+%%%%%%%
+
+\cs_new_protected:Npn \xstacks_cs_gset:N #1
+  {
+    \int_gzero_new:c {g__xstacks_ #1 _int}
+    \cs_gset:cpe  {#1_gpush:n} ##1
+      {
+        \exp_not:N \int_gincr:N \exp_not:c {g__xstacks_ #1 _int}
+        \exp_not:N \tl_gset:cn 
+            {g__xstacks_ \exp_not:N \int_to_Alph:n \exp_not:c {g__xstacks_ #1 _int} _tl} {##1}
+      }
+    \cs_gset:cpe  {#1_gput_right:n} ##1
+      {
+        \exp_not:N \tl_gput_right:cn 
+            {g__xstacks_ \exp_not:N \int_to_Alph:n \exp_not:c {g__xstacks_ #1 _int} _tl} {##1}
+      }
+    \cs_gset:cpe  {#1_gput_left:n} ##1
+      {
+        \exp_not:N \tl_gput_left:cn 
+            {g__xstacks_ \exp_not:N \int_to_Alph:n \exp_not:c {g__xstacks_ #1 _int} _tl} {##1}
+      }
+%    \cs_gset:cpe  {#1_gpop:} 
+%      {
+%        \exp_not:N \int_if_zero:nF \exp_not:c {g__xstacks_ #1 _int}
+%          {
+%            \exp_not:N \use:c 
+%              {g__xstacks_ \exp_not:N \int_to_Alph:n \exp_not:c {g__xstacks_ #1 _int} _tl}
+%            \exp_not:N \int_gdecr:N \exp_not:c {g__xstacks_ #1 _int}
+%          }
+%      }
+    \cs_gset:cpe  {#1_gpop:} 
+      {
+        \exp_not:N \if_int_compare:w \exp_not:c {g__xstacks_ #1 _int} =  \c_zero_int
+        \exp_not:N \else:
+            \exp_not:N \use:c 
+              {g__xstacks_ \exp_not:N \int_to_Alph:n \exp_not:c {g__xstacks_ #1 _int} _tl}
+            \exp_not:N \int_gdecr:N \exp_not:c {g__xstacks_ #1 _int}
+        \exp_not:N \fi:
+      }
+
+  }
+
+%%%%%%%
+%%%  Note: 
+%%%  \__xstacks_cs:NNnN absorbs 4 tokens, 3 'internal' + 1 given by the user
+%%%  except in the push case, whereas it will absorb 5 tokens!
+%%%
+%%% a local group is created (except in the pop case)
+%%% so there is no need to reset \__xstacks_cs:NNnN
+%%%%%%%
+
+\cs_set_eq:NN \__xstacks_cs:NNnN \use_none:nnn
+
+\cs_new_protected:Npn \xstacks_gset:N #1
+  {
+    \tl_set:Ne \l__xstacks_tmpA_tl {\cs_to_str:N #1}
+    \tl_gset:cn {g__xstacks_ \l__xstacks_tmpA_tl _tl} {}
+    \int_gzero_new:c {g__xstacks_ \l__xstacks_tmpA_tl _int}
+    \tl_gset:Ne #1
+      {
+        \exp_not:N \__xstacks_cs:NNnN
+        \exp_not:c {g__xstacks_ \l__xstacks_tmpA_tl _tl}
+        \exp_not:c {g__xstacks_ \l__xstacks_tmpA_tl _int}
+        {\l__xstacks_tmpA_tl}
+      }
+  }
+
+\cs_new_protected:Npn \__xstacks_gpush:NNnNn #1#2#3#4#5  
+  {
+    \int_gincr:N #2
+    \tl_gset:cn {g__xstacks_ #3 _ \int_to_Alph:n #2 _tl}{#5}
+    \tl_gset:Ne #4
+      {
+        \exp_not:N \__xstacks_cs:NNnN
+        \exp_not:c {g__xstacks_ #3 _ \int_to_Alph:n #2 _tl}
+        \exp_not:N #2
+        {#3}
+      }
+  }
+
+\cs_new_protected:Npn \xstacks_gpush:Nn #1#2
+  {
+    {
+      \cs_set_eq:NN \__xstacks_cs:NNnN \__xstacks_gpush:NNnNn
+      #1 #1 {#2}  
+    }
+  }
+
+\cs_new_protected:Npn \__xstacks_gput_right:NNnN #1#2#3#4  
+  { \tl_gput_right:Nn #1 {#4} }  
+
+\cs_new_protected:Npn \xstacks_gput_right:Nn #1#2
+  {
+    {
+      \cs_set_eq:NN \__xstacks_cs:NNnN \__xstacks_gput_right:NNnN
+      #1 {#2}   
+    }
+  }
+
+\cs_new_protected:Npn \__xstacks_gput_left:NNnN #1#2#3#4  
+  { \tl_gput_left:Nn #1 {#4} }  
+
+\cs_new_protected:Npn \xstacks_gput_left:Nn #1#2
+  {
+    {
+      \cs_set_eq:NN \__xstacks_cs:NNnN \__xstacks_gput_left:NNnN
+      #1 {#2}   
+    }
+  }
+
+%\cs_new_protected:Npn \__xstacks_gpop:NNnN #1#2#3#4  
+%  {
+%    \cs_set_eq:NN \__xstacks_cs:NNnN \use_none:nnn
+%    \int_if_zero:nF #2
+%    {
+%      \int_gdecr:N #2
+%      \tl_gset:Ne #4
+%        {
+%          \exp_not:N \__xstacks_cs:NNnN
+%          \exp_not:c {g__xstacks_ #3 _ \int_to_Alph:n #2 _tl}
+%          \exp_not:N #2
+%          {#3}
+%        }
+%      #1    
+%    }
+%  }
+
+\cs_new_protected:Npn \__xstacks_gpop:NNnN #1#2#3#4  
+  {
+    \cs_set_eq:NN \__xstacks_cs:NNnN \use_none:nnn
+    \if_int_compare:w #2 = \c_zero_int
+    \else:
+      \int_gdecr:N #2
+      \tl_gset:Ne #4
+        {
+          \exp_not:N \__xstacks_cs:NNnN
+          \exp_not:c {g__xstacks_ #3 _ \int_to_Alph:n #2 _tl}
+          \exp_not:N #2
+          {#3}
+        }
+      #1    
+    \fi:
+  }
+
+\cs_new_protected:Npn \xstacks_gpop:N #1
+  {
+    \cs_set_eq:NN \__xstacks_cs:NNnN \__xstacks_gpop:NNnN
+    #1 #1  
+  }

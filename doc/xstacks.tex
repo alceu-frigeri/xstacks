@@ -1,0 +1,491 @@
+%%%==============================================================================
+% WinEdt pragmas
+% !Mode:: "TeX:EN"
+% Default Compile engines:
+% !TEX program = pdflatex
+% !PDFTeXify ext =  --enable-etex  --restrict-write18
+% !PDFLaTeX ext  =  --enable-etex  --restrict-write18
+% !BIB program = biber
+%%%==============================================================================
+%% Copyright 2026-present by Alceu Frigeri
+%%
+%% This work may be distributed and/or modified under the conditions of
+%%
+%% * The [LaTeX Project Public License](http://www.latex-project.org/lppl.txt),
+%%   version 1.3c (or later), and/or
+%% * The [GNU Affero General Public License](https://www.gnu.org/licenses/agpl-3.0.html),
+%%   version 3 (or later)
+%%
+%% This work has the LPPL maintenance status *maintained*.
+%%
+%% The Current Maintainer of this work is Alceu Frigeri
+%%
+%% This is version {1.0} {2026/01/03}
+%%
+%% The list of files that compose this work can be found in the README.md file at
+%% https://ctan.org/pkg/xstacks
+%%
+%%%==============================================================================
+\documentclass[10pt]{article}
+\RequirePackage[verbose,a4paper,marginparwidth=27.5mm,top=2.5cm,bottom=1.5cm,hmargin={40mm,20mm},marginparsep=2.5mm,columnsep=10mm,asymmetric]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[infograb,silence]{codedescribe}
+\RequirePackage[inline]{enumitem}
+\SetEnumitemKey{midsep}{parsep=0ex,itemsep=0.4ex}
+
+\usepackage{xstacks}
+
+%% if needed
+\RequirePackage[backend=biber]{biblatex}
+\addbibresource{xstacks.bib}
+
+
+\newcodekey{xstacks}
+  {
+    letter = {_},
+    texcs = [3]{xstacks_groupmark,xstacks_aftergroup,xstacks_cs_gset,xstacks_gset,xstacks_gpush,xstacks_gput_right,xstacks_gput_left,xstacks_gpop},
+    emph  = [3]{myStack_gpush,myStack_gput_right,myStack_gput_left,myStack_gpop, g_mytest_stack,myMark_int,myStack},
+    keywd = [2]{l__mytest_tmpa_bool,l__mytest_tmpb_bool,l__mytest_tmpc_bool,mytest_show_bools},
+    codeprefix = {},
+    resultprefix = {},
+  }
+\RequirePackage[hidelinks,hypertexnames=false]{hyperref}
+
+\begin{document}
+\tsOn
+
+\tstitle{
+  author={Alceu Frigeri\footnote{\tsverb{https://github.com/alceu-frigeri/xstacks}}},
+  date={\tsdate},
+  title={The xstacks Package\break Version \PkgInfo{xstacks}{version}}
+  }
+  
+
+\begin{typesetabstract}
+ 
+This package aims at solving one problem, how to preserve some variable values (tokens) beyond nested groups. 4 alternative strategies are implemented.
+\end{typesetabstract}
+
+\tableofcontents
+
+\section{Introduction}
+Some times one needs (wants) to preserve the value of some variables beyond a local group. In the simple cases it's enough to use !:[code,or]{\group_insert_after:N,\aftergroup}, if you know how many nested groups you are in.
+
+But, sometimes you don't have this information (see \cite{exchange}, for instance) in which case you have a few options:
+\begin{itemize}[midsep]
+  \item use global variables, or
+  \item implement an after group strategy, as suggested by \citeauthor{exchange}, or
+  \item use a (global) stack.
+\end{itemize}
+
+The global variables way is, of course, the fastest (and easiest) if you don't have to worry about recursive coding (like when you have nested groups inside an environment, which might be nested into itself).
+
+!:{\xstacks_aftergroup:N,\xstacks_aftergroup:NN} (and associated) are two variants of the after group strategy.
+
+!:{\xstacks_cs_gset:N,\xstacks_gset:N } (and associated) are two variants of the (global) stack strategy.
+
+\newpage
+\section{Simple mark point after group variant}
+
+\begin{codedescribe}{\xstacks_groupmark:,\xstacks_aftergroup:N}
+\begin{codesyntax}%
+!!?{\xstacks_groupmark:}{}
+!!?{\xstacks_aftergroup:N}{token}
+\end{codesyntax}
+  These will use a single, internal, variable to `track' the target group level. Better said, upon calling !:{\xstacks_groupmark:} the current group will be saved (local assignment), so that, later on, !:{\xstacks_aftergroup:N} can be called from nested groups and !:[marg]{token} will be pushed into the marked group. 
+\end{codedescribe}
+\begin{tsremark}
+Since all assignments are local, it's possible to have multiple marks, for instance, one at group level 2, another at group level 5, so that anything saved with !:{\xstacks_aftergroup:N} on group level 6+ will be restored at group level 5... anything between level 3 until the other mark will be restored at level 2.
+\end{tsremark}
+\begin{tsremark}
+  if !:{\xstacks_aftergroup:N} is called at the same level (or above) of the mark, it will be equivalent to a simple !:{\group_insert_after:N}.
+\end{tsremark}
+
+\section{Multiple mark points after group variant}
+
+\begin{codedescribe}{\xstacks_groupmark:N,\xstacks_aftergroup:NN}
+\begin{codesyntax}%
+!!?{\xstacks_groupmark:N}{int-var}
+!!?{\xstacks_aftergroup:NN}{int-var,token}
+\end{codesyntax}
+!:[marg]{int-var} must be an already declared integer variable, and will be used to mark/track a group level. That way it is possible to have multiple and independent return points. Otherwise it works exactly as the previous pair of commands. All assignments made to !:[marg]{int-var} are also local.
+\end{codedescribe}
+
+
+\section{Stack command variant}
+
+
+\begin{codedescribe}{\xstacks_cs_gset:N}
+\begin{codesyntax}%
+!!?{\xstacks_cs_gset:N}{cs-radix}
+\end{codesyntax}
+This will globally create a set of commands, named after !:[marg]{cs-radix}, to push, put and pop items from a private global stack. All assignments to/from that stack will be global, and the stack itself will be unique to the command's set.
+\end{codedescribe}
+\begin{tsremark}
+  It won't test for the existence of !:[marg]{cs-radix} and silently overwrite any previous definition.
+\end{tsremark}
+
+\begin{codedescribe}{\<cs-radix>_gpush:n,\<cs-radix>_gput_right:n,\<cs-radix>_gput_left:n,\<cs-radix>_gpop:}
+\begin{codesyntax}%
+!!?{\<cs-radix>_gpush:n}{tokens}
+!!?{\<cs-radix>_gput_right:n}{tokens}
+!!?{\<cs-radix>_gput_left:n}{tokens}
+!!?{\<cs-radix>_gput_gpop:}{}
+\end{codesyntax}
+The !:{\<cs-radix>_gpush:n} will push !:[marg]{tokens} (can be any number of tokens) into a global, private, stack. !:{\<cs-radix>_gput_right:n,\<cs-radix>_gput_left:n} will amend tokens to it, and !:{\<cs-radix>_gpop:}, as the name implies, will insert the top of the stack into the input stream. That way it is possible to have a very fine control of what, where and when the items are collected and used.
+\end{codedescribe}
+
+
+\section{Stack variable variant}
+
+\begin{codedescribe}{\xstacks_gset:N,\xstacks_gpush:Nn,\xstacks_gput_right:Nn,\xstacks_gput_left:Nn,\xstacks_gpop:N}
+\begin{codesyntax}%
+!!?{\xstacks_gset:N}{stack-var}
+!!?{\xstacks_gpush:Nn}{stack-var,tokens}
+!!?{\xstacks_gput_right:Nn}{stack-var,tokens}
+!!?{\xstacks_gput_left:Nn}{stack-var,tokens}
+!!?{\xstacks_gpop:N}{stack-var}
+\end{codesyntax}
+!:{\xstacks_gset:N} will globally create a stack variable named !:[marg]{stack-var} (a specialized token list variable). Once created it is possible to push tokens into it (!:{\xstacks_gpush:Nn}), amend tokens to the top (!:{\xstacks_gput_right:Nn,\xstacks_gput_left:Nn}) and pop those tokens (!:{\xstacks_gpop:N}) into the input stream. All assignments being global.
+\end{codedescribe}
+\begin{tsremark}
+  It won't test for the existence of !:[marg]{stack-var} and silently overwrite any previous definition.
+\end{tsremark}
+
+
+
+
+\section{Benchmarks and Final Thoughts}
+In the following, there is an exercise of \dots, better said, to evaluate the advantage/disadvantage of each approach, in an extreme case: multiple tokens, deeply nested groups. 
+The most effective strategy still is the after group one, a difference of just about  \emph{200 ops}, but, taking in account that the stack variants are mostly `constant time' (they don't depend on how deep the grouping is, but just how many operations (push/pop) are needed), in lighter cases there is no content.
+
+At the end, it's a case of flexibility/convenience versus performance. In case of the original problem, to save context past the end of a scope, the after group approach is the one. Now, if one needs a finer control of what/when (and not just preserving context past end of scope) the stack variants can have some use.
+
+\begin{codestore}[stack-bench]
+\fp_set:Nn \g_benchmark_duration_target_fp {20}
+\end{codestore}
+\begin{tsremark}
+  The after group variant is the fastest if using the !:{\if_int_compare:w} primitive. If instead, for reference, !:{\int_if_compare:nNnTF} is used, the number of \emph{ops} almost triple! Take a look at the code, the version with !:{\int_if_compare:nNnTF} is commented out.
+\end{tsremark}
+\begin{tsremark}
+  Not really needed, but since one is at it, you can try (for more `stable' results) !:{\fp_set:Nn} !:{\g_benchmark_duration_target_fp} !![code]{{20}}\ldots
+\end{tsremark}
+
+\tsOff
+\begin{codestore}[stack-bench]
+\benchmark:n
+  {
+    \group_begin:
+      \xstacks_groupmark:      
+    {{  
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpc_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpc_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpc_bool   
+    {{
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpb_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpb_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpb_bool
+    {{
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+    {{
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+    {{
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+        \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+    }} }} }}
+    }} }}
+    \group_end:
+  }
+\end{codestore}
+
+
+\begin{codestore}[stack-bench]
+    \int_gzero_new:N \myMark_int
+\benchmark:n
+  {
+    \group_begin:
+      \xstacks_groupmark:N \myMark_int
+    {{
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpc_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpc_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpc_bool   
+    {{
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpb_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpb_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpb_bool
+    {{
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+    {{
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+    {{
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+        \xstacks_aftergroup:NN \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN \myMark_int \l__mytest_tmpa_bool
+    }} }} }}
+    }} }}
+    \group_end:
+  }
+\end{codestore}
+
+
+
+\begin{codestore}[stack-bench]
+    \xstacks_cs_gset:N {myStack}
+\benchmark:n
+  {
+    \group_begin:
+    {{
+        \myStack_gpush:n {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    {{
+        \myStack_gput_right:n {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    {{
+        \myStack_gput_right:n {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    {{
+        \myStack_gput_right:n {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    {{
+        \myStack_gput_right:n {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    }} }} }}
+    }} }}
+      \myStack_gpop:     
+    \group_end:  
+  }
+\end{codestore}
+
+
+\begin{codestore}[stack-bench]
+    \xstacks_gset:N \g_mytest_stack         
+\benchmark:n
+  {
+    \group_begin:
+    {{
+        \xstacks_gpush:Nn \g_mytest_stack {
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool
+        }
+    {{
+        \xstacks_gput_right:Nn \g_mytest_stack {
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool 
+          \bool_set_true:N \l__mytest_tmpb_bool
+        }
+    {{
+        \xstacks_gput_right:Nn \g_mytest_stack {
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool
+        }
+    {{
+        \xstacks_gput_right:Nn \g_mytest_stack {
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool
+        }
+    {{
+        \xstacks_gput_right:Nn \g_mytest_stack {
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool 
+          \bool_set_true:N \l__mytest_tmpc_bool
+        }
+    }} }} }}
+    }} }}
+      \xstacks_gpop:N   \g_mytest_stack    
+    \group_end:  
+  }
+\end{codestore}
+
+
+\tsOn
+\subsection{Single mark, after group variant}
+\tscode*[xstacks]{stack-bench}[2]
+On average, it took about \emph{160 ops} (\emph{430 ops} if using !:{\int_if_compare:nNnTF}). If `only' the 4 first groups, the average goes down to just \emph{35 ops} (\emph{90 ops} if using !:{\int_if_compare:nNnTF}). Obviously, the number of after groups raises exponentially, $2^n$, with the number of nested groups.
+
+\subsection{Multiple marks, after group variant}
+\tscode*[xstacks]{stack-bench}[3]
+On average, it took about \emph{200 ops} (\emph{480 ops} if using !:{\int_if_compare:nNnTF}).  If `only' the 4 first groups, the average goes down to just \emph{45 ops} (\emph{95 ops} if using !:{\int_if_compare:nNnTF}). Likewise, the number of after groups raises exponentially, $2^n$, with the number of nested groups (more expensive than the previous one because of the extra integer that has to be carried on).
+
+\subsection{Stack command variant}
+\tscode*[xstacks]{stack-bench}[4]
+On average, it took about \emph{405 ops}.  If `only' the 4 first groups, the average goes down to about \emph{195 ops}. All operations, !:{\myStack_gpush:n, \myStack_gput_right:n, \myStack_gpop:} are, more or less, equally expensive.
+
+\subsection{Stack variable variant}
+\tscode*[xstacks]{stack-bench}[5]
+On average, it took about \emph{310 ops}. If `only' the 4 first groups, the average remains about \emph{290 ops}. The !:{\xstacks_gpush:Nn,\xstacks_gpop:N} are the most expensive operations in this case.
+\tsOff
+%
+%\ExplSyntaxOn
+%\tsexec{stack-bench}[1]
+%\tsexec{stack-bench}[2]
+%\tsexec{stack-bench}[3]
+%\tsexec{stack-bench}[4]
+%\tsexec{stack-bench}[5]
+%\ExplSyntaxOff
+
+
+%% if needed
+\printbibliography
+
+\begin{codestore}[stack-test]
+\ExplSyntaxOn
+  \bool_new:N \l__mytest_tmpa_bool
+  \bool_new:N \l__mytest_tmpb_bool
+  \bool_new:N \l__mytest_tmpc_bool
+  \cs_new:Npn \mytest_show_bools:n #1
+    { \underline{#1:}\par
+      \bool_if:NTF \l__mytest_tmpa_bool {{\color{red}a~true}}{a~false}  \par
+      \bool_if:NTF \l__mytest_tmpb_bool {{\color{red}b~true}}{b~false}  \par
+      \bool_if:NTF \l__mytest_tmpc_bool {{\color{red}c~true}}{c~false}  \par
+    }
+\ExplSyntaxOff
+\end{codestore}
+
+\begin{codestore}[stack-test]
+\ExplSyntaxOn
+    \group_begin:
+      \xstacks_groupmark:      
+    {{  \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpa_bool
+    {{  \xstacks_aftergroup:N \bool_set_true:N
+        \xstacks_aftergroup:N \l__mytest_tmpb_bool
+        \mytest_show_bools:n {T1}  
+    }}}}
+      \mytest_show_bools:n {T2}
+    \group_end:
+\ExplSyntaxOff
+\end{codestore}
+
+
+\begin{codestore}[stack-test]
+\ExplSyntaxOn
+    \int_new:N \myMark_int
+    \group_begin:
+      \xstacks_groupmark:N \myMark_int      
+    {{  \xstacks_aftergroup:NN 
+          \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN 
+          \myMark_int \l__mytest_tmpa_bool
+    {{  \xstacks_aftergroup:NN 
+          \myMark_int \bool_set_true:N
+        \xstacks_aftergroup:NN 
+          \myMark_int \l__mytest_tmpb_bool
+        \mytest_show_bools:n {T1}   
+    }}}}
+      \mytest_show_bools:n {T2}
+    \group_end:
+\ExplSyntaxOff
+\end{codestore}
+
+
+
+\begin{codestore}[stack-test]
+\ExplSyntaxOn
+    \group_begin:
+      \xstacks_cs_gset:N {myStack}       
+    {{  \myStack_gpush:n 
+          {\bool_set_true:N \l__mytest_tmpa_bool}
+    {{  \myStack_gput_right:n 
+          {\bool_set_true:N \l__mytest_tmpb_bool}
+        \mytest_show_bools:n {T1}   
+    }}}}
+      \myStack_gpop:     
+      \mytest_show_bools:n {T2}
+    \group_end:  
+\ExplSyntaxOff
+\end{codestore}
+
+
+\begin{codestore}[stack-test]
+\ExplSyntaxOn
+    \group_begin:
+      \xstacks_gset:N \g_mytest_stack           
+    {{  \xstacks_gpush:Nn \g_mytest_stack 
+          {\bool_set_true:N \l__mytest_tmpa_bool}
+    {{  \xstacks_gput_right:Nn \g_mytest_stack 
+          {\bool_set_true:N \l__mytest_tmpb_bool}
+        \mytest_show_bools:n {T1}   
+    }}}}
+      \xstacks_gpop:N   \g_mytest_stack    
+      \mytest_show_bools:n {T2}
+    \group_end:  
+\ExplSyntaxOff
+\end{codestore}
+
+\newpage
+\section{Addendum}  
+A quick test\dots
+\tsexec{stack-test}[1]
+\tscode*[xstacks]{stack-test}[1]
+\tsdemo[xstacks]{stack-test}[2]
+\tsdemo[xstacks]{stack-test}[3]
+\tsdemo[xstacks]{stack-test}[4]
+\tsdemo[xstacks]{stack-test}[5]
+
+%
+%\ExplSyntaxOn
+%\cs_show:N \int_compare:nNnTF
+%\cs_show:N\__int_eval:w
+%\cs_show:N \if_int_compare:w
+%\cs_show:N \int_gincr:N
+%\ExplSyntaxOff
+\end{document} 
