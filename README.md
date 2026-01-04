@@ -1,7 +1,7 @@
 xstacks
 ==========
 
-- dedicated global stack(s) implementations
+- after groups and dedicated global stack(s) implementations
 
 For more details,  see the documentation,
 [xstacks.pdf](http://mirrors.ctan.org/macros/latex/contrib/xstacks/doc/xstacks.pdf)
@@ -9,8 +9,7 @@ For more details,  see the documentation,
 --------------
 
 ## Requirements
-* none besides a fairly recent LaTeX distribution as recent as 2022/06/01
-(with the new in kernel *\ProcessKeyOptions* and *\NewDocumentCommand*).
+* none besides a fairly recent LaTeX distribution as recent as [2023/11/01]
 
 ## Installation
 The stable version is available at [CTAN](https://ctan.org/pkg/xstacks).
@@ -65,5 +64,5 @@ The Current Maintainer of this work is Alceu Frigeri
 
 ### Change log
 
-* Version 1.0 (this)
+* Version 1.0/1.0a (this)
     - Initial setup/release.

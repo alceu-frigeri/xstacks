@@ -20,7 +20,7 @@
 %%
 %% The Current Maintainer of this work is Alceu Frigeri
 %%
-%% This is version {1.0} {2026/01/03}
+%% This is version {1.0a} {2026/01/04}
 %%
 %% The list of files that compose this work can be found in the README.md file at
 %% https://ctan.org/pkg/xstacks
@@ -65,13 +65,13 @@
 
 \begin{typesetabstract}
  
-This package aims at solving one problem, how to preserve some variable values (tokens) beyond nested groups. 4 alternative strategies are implemented.
+This package aims at solving one problem: how to preserve some variable values (tokens) beyond a variable number of nested groups. That for, 4 alternative strategies are implemented.
 \end{typesetabstract}
 
 \tableofcontents
 
 \section{Introduction}
-Some times one needs (wants) to preserve the value of some variables beyond a local group. In the simple cases it's enough to use !:[code,or]{\group_insert_after:N,\aftergroup}, if you know how many nested groups you are in.
+Sometimes one needs  to preserve the value of some variables beyond a local group. In the simple cases it's enough to use !:[code,or]{\group_insert_after:N,\aftergroup}, if you know how many nested groups you are in.
 
 But, sometimes you don't have this information (see \cite{exchange}, for instance) in which case you have a few options:
 \begin{itemize}[midsep]
@@ -80,7 +80,7 @@ But, sometimes you don't have this information (see \cite{exchange}, for instanc
   \item use a (global) stack.
 \end{itemize}
 
-The global variables way is, of course, the fastest (and easiest) if you don't have to worry about recursive coding (like when you have nested groups inside an environment, which might be nested into itself).
+The global variables way is, of course, the fastest (and easiest) if you don't have to worry about reentrant coding (like when you have nested groups inside an environment, which might get nested into itself).
 
 !:{\xstacks_aftergroup:N,\xstacks_aftergroup:NN} (and associated) are two variants of the after group strategy.
 
@@ -170,7 +170,7 @@ At the end, it's a case of flexibility/convenience versus performance. In case o
   The after group variant is the fastest if using the !:{\if_int_compare:w} primitive. If instead, for reference, !:{\int_if_compare:nNnTF} is used, the number of \emph{ops} almost triple! Take a look at the code, the version with !:{\int_if_compare:nNnTF} is commented out.
 \end{tsremark}
 \begin{tsremark}
-  Not really needed, but since one is at it, you can try (for more `stable' results) !:{\fp_set:Nn} !:{\g_benchmark_duration_target_fp} !![code]{{20}}\ldots
+  Not really needed, but since one is at it, you can try (for more stable results) !:{\fp_set:Nn} !:{\g_benchmark_duration_target_fp} !![code]{{20}}\ldots
 \end{tsremark}
 
 \tsOff
@@ -473,7 +473,7 @@ On average, it took about \emph{310 ops}. If `only' the 4 first groups, the aver
 
 \newpage
 \section{Addendum}  
-A quick test\dots
+A quick test \dots
 \tsexec{stack-test}[1]
 \tscode*[xstacks]{stack-test}[1]
 \tsdemo[xstacks]{stack-test}[2]
