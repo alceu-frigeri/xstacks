@@ -1,7 +1,7 @@
 xstacks
 ==========
 
-- after groups and dedicated global stack(s) implementations
+- after group(s) and dedicated global stack(s) implementations
 
 For more details,  see the documentation,
 [xstacks.pdf](http://mirrors.ctan.org/macros/latex/contrib/xstacks/doc/xstacks.pdf)
