@@ -20,7 +20,7 @@
 %%
 %% The Current Maintainer of this work is Alceu Frigeri
 %%
-%% This is version {1.0a} {2026/01/04}
+%% This is version {1.1} {2026/02/19}
 %%
 %% The list of files that compose this work can be found in the README.md file at
 %% https://ctan.org/pkg/xstacks
@@ -45,8 +45,12 @@
 \newcodekey{xstacks}
   {
     letter = {_},
-    texcs = [3]{xstacks_groupmark,xstacks_aftergroup,xstacks_cs_gset,xstacks_gset,xstacks_gpush,xstacks_gput_right,xstacks_gput_left,xstacks_gpop},
-    emph  = [3]{myStack_gpush,myStack_gput_right,myStack_gput_left,myStack_gpop, g_mytest_stack,myMark_int,myStack},
+    texcs = [3]{xstacks_groupmark,xstacks_aftergroup,xstacks_cs_gset,xstacks_gset,
+          xstacks_gpush,xstacks_gput_right,xstacks_gput_left,xstacks_gpop,
+          xstacks_new_groupmark, groupmark_new, globalstack_csnew,
+          globalstack_new, globalstack_gpush, globalstack_gput_right, globalstack_gput_left, globalstack_gpop },
+    emph  = [3]{myStack_gpush,myStack_gput_right,myStack_gput_left,myStack_gpop,
+          g_mytest_stack,myMark_int,myStack,MyMark, myMark_aftergroup,myMark_groupmark},
     keywd = [2]{l__mytest_tmpa_bool,l__mytest_tmpb_bool,l__mytest_tmpc_bool,mytest_show_bools},
     codeprefix = {},
     resultprefix = {},
@@ -57,21 +61,23 @@
 \tsOn
 
 \tstitle{
-  author={Alceu Frigeri\footnote{\tsverb{https://github.com/alceu-frigeri/xstacks}}},
+  author={Alceu Frigeri\footnote{\tsfmt{\url{https://github.com/alceu-frigeri/xstacks}}}},
   date={\tsdate},
   title={The xstacks Package\break Version \PkgInfo{xstacks}{version}}
   }
   
 
 \begin{typesetabstract}
- 
-This package aims at solving one problem: how to preserve some variable values (tokens) beyond a variable number of nested groups. That for, four alternative strategies are implemented.
+
+Originally this package aimed at solving the problem of preserving some tokens beyond a variable number of nested groups. Though, after some further testing and optimization, it became clear that (a) there was a lot of room for improvement (stacks) and (b) there was a better way to implement the aftergroup mechanism. As such, there are two new packages at CTAN, !:[pkg]{tokgroupmark}\cite{tokgroupmark} which implements (b) and  !:[pkg]{tokglobalstack}\cite{tokglobalstack} which implements (a).
+
+This package now loads these two, and set a series of aliases such that the ``user visible commands'' remain the same (but the user is invited to use one of the other two, instead of this). Moreover, the benchmark part got updated (see \ref{benchmark}).
 \end{typesetabstract}
 
 \tableofcontents
 
 \section{Introduction}
-Sometimes one needs  to preserve the value of some variables beyond a local group. In simple cases it's enough to use !:[code,or]{\group_insert_after:N,\aftergroup}, if you know how many nested groups you are in.
+(Original rationality behind this package) Sometimes one needs  to preserve the value of some variables beyond a local group. In simple cases it's enough to use !:[code,or]{\group_insert_after:N,\aftergroup}, if you know how many nested groups you are in.
 
 But, sometimes you don't have this information (see \cite{exchange}, for instance) in which case you have a few options:
 \begin{itemize}[midsep]
@@ -82,12 +88,9 @@ But, sometimes you don't have this information (see \cite{exchange}, for instanc
 
 The global variables way is, of course, the fastest (and easiest) if you don't have to worry about reentrant coding (like when you have nested groups inside an environment, which might get nested into itself).
 
-!:{\xstacks_aftergroup:N,\xstacks_aftergroup:NN} (and associated) are two variants of the after group strategy.
 
-!:{\xstacks_cs_gset:N,\xstacks_gset:N } (and associated) are two variants of the (global) stack strategy.
 
-\newpage
-\section{Simple mark point after group variant}
+\section{Simple mark point after group variant}\label{def:xstacks-aftergroup}
 
 \begin{codedescribe}{\xstacks_groupmark:,\xstacks_aftergroup:N}
 \begin{codesyntax}%
@@ -102,8 +105,11 @@ Since all assignments are local, it's possible to have multiple marks, for insta
 \begin{tsremark}
   if !:{\xstacks_aftergroup:N} is called at the same level (or above) of the mark, it will be equivalent to a simple !:{\group_insert_after:N}.
 \end{tsremark}
+\begin{tsremark}[\color{red}Attention:]
+  These should be considered \emph{deprecated}. They are less effective and flexible than !:{\groupmark_new:n} (from package !:[pkg]{tokgroupmark}).
+\end{tsremark}
 
-\section{Multiple mark points after group variant}
+\section{Multiple mark points after group variant}\label{def:xstacks-aftergroup-int}
 
 \begin{codedescribe}{\xstacks_groupmark:N,\xstacks_aftergroup:NN}
 \begin{codesyntax}%
@@ -112,62 +118,107 @@ Since all assignments are local, it's possible to have multiple marks, for insta
 \end{codesyntax}
 !:[marg]{int-var} must be an already declared integer variable, and will be used to mark/track a group level. That way it is possible to have multiple and independent return points. Otherwise it works exactly as the previous pair of commands. All assignments made to !:[marg]{int-var} are also local.
 \end{codedescribe}
-
-
-\section{Stack command variant}
-
-
-\begin{codedescribe}{\xstacks_cs_gset:N}
-\begin{codesyntax}%
-!!?{\xstacks_cs_gset:N}{cs-radix}
-\end{codesyntax}
-This will globally create a set of commands, named after !:[marg]{cs-radix}, to push, put and pop items from a private global stack. All assignments to/from that stack will be global, and the stack itself will be unique to the command's set.
-\end{codedescribe}
-\begin{tsremark}
-  It won't test for the existence of !:[marg]{cs-radix} and silently overwrite any previous definition.
+\begin{tsremark}[\color{red}Attention:]
+  These should be considered \emph{deprecated}. They are less effective and flexible than !:{\groupmark_new:n} (from package !:[pkg]{tokgroupmark}).
 \end{tsremark}
 
-\begin{codedescribe}{\<cs-radix>_gpush:n,\<cs-radix>_gput_right:n,\<cs-radix>_gput_left:n,\<cs-radix>_gpop:}
-\begin{codesyntax}%
-!!?{\<cs-radix>_gpush:n}{tokens}
-!!?{\<cs-radix>_gput_right:n}{tokens}
-!!?{\<cs-radix>_gput_left:n}{tokens}
-!!?{\<cs-radix>_gput_gpop:}{}
-\end{codesyntax}
-The !:{\<cs-radix>_gpush:n} will push !:[marg]{tokens} (can be any number of tokens) into a global, private, stack. !:{\<cs-radix>_gput_right:n,\<cs-radix>_gput_left:n} will amend tokens to it, and !:{\<cs-radix>_gpop:}, as the name implies, will insert the top of the stack into the input stream. That way it is possible to have a very fine control of what, where and when the items are collected and used.
-\end{codedescribe}
-
-
-\section{Stack variable variant}
-
-\begin{codedescribe}{\xstacks_gset:N,\xstacks_gpush:Nn,\xstacks_gput_right:Nn,\xstacks_gput_left:Nn,\xstacks_gpop:N}
-\begin{codesyntax}%
-!!?{\xstacks_gset:N}{stack-var}
-!!?{\xstacks_gpush:Nn}{stack-var,tokens}
-!!?{\xstacks_gput_right:Nn}{stack-var,tokens}
-!!?{\xstacks_gput_left:Nn}{stack-var,tokens}
-!!?{\xstacks_gpop:N}{stack-var}
-\end{codesyntax}
-!:{\xstacks_gset:N} will globally create a stack variable named !:[marg]{stack-var} (a specialized token list variable). Once created it is possible to push tokens into it (!:{\xstacks_gpush:Nn}), amend tokens to the top (!:{\xstacks_gput_right:Nn,\xstacks_gput_left:Nn}) and pop those tokens (!:{\xstacks_gpop:N}) into the input stream. All assignments being global.
-\end{codedescribe}
+\section{Custom Group Mark Commands}\label{def:groupmark-cmd}
+This is defined in the package !:[pkg]{tokgroupmark}. The obvious distinction with the previous commands: this don't depend on the user reserving an integer for it (as in !:{\xstacks_groupmark:N}) and, unlike !:{\xstacks_groupmark:}, it allows for multiple sets (no commonalities).
+\begin{codedescribe}{\groupmark_new:n}
+  \begin{codesyntax}
+    !!?{\groupmark_new:n}{mark-prefix}
+  \end{codesyntax}
+This will globally create two commands (below), named after !:[marg]{mark-prefix}, to ``mark'' and ``restore'' a token up to that ``mark''.
 \begin{tsremark}
-  It won't test for the existence of !:[marg]{stack-var} and silently overwrite any previous definition.
+  Internally, an unique integer will be created to track the group mark.
+\end{tsremark}  
+\begin{tsremark}
+  An error will be raised if !:[marg]{mark-prefix} is already used.
+\end{tsremark}  
+
+\end{codedescribe}
+
+\begin{codedescribe}{\<mark-prefix>_groupmark:,\<mark-prefix>_aftergroup:N}
+\begin{codesyntax}%
+!!?{\<mark-prefix>_groupmark:}{}
+!!?{\<mark-prefix>_aftergroup:N}{token}
+\end{codesyntax}
+The !:{\<mark-prefix>_groupmark:} will ``mark'' (save) the current group level, so that, when using  !:{\<mark-prefix>_aftergroup:N} the token will be restored once the same group level is reached once again  (similar to !:{\aftergroup}).
+
+\begin{tsremark}
+  !:{\<mark-prefix>_groupmark:} will save (local assignment) the current group in an (unique to the set) integer. Since the assignment is local, it is possible to have more than one mark associated with the same set.
+\end{tsremark}
+
+\end{codedescribe}
+
+
+\newpage
+\section{Stack command variant}\label{def:globalstack-cmd}
+
+These are defined in the package !:[pkg]{tokglobalstack}.
+
+\begin{codedescribe}{\globalstack_csnew:n}
+\begin{codesyntax}%
+!!?{\globalstack_csnew:n}{stack-prefix}
+\end{codesyntax}
+This will globally create a set of commands, named after !:[marg]{stack-prefix}, to push, put and pop items from a private global stack. All assignments to/from that stack will be global, and the stack itself will be unique to the command's set.
+\begin{tsremark}[\color{red}Attention:]
+  This package defines !:{\xstacks_cs_gset:N,\xstacks_cs_gset:n} as aliases to this, for continuity, as it was originally defined in this package.
+\end{tsremark}
+\end{codedescribe}
+
+
+\begin{codedescribe}{\<stack-prefix>_gpush:n,\<stack-prefix>_gput_right:n,\<stack-prefix>_gput_left:n,\<stack-prefix>_gpop:}
+\begin{codesyntax}%
+!!?{\<stack-prefix>_gpush:n}{tokens}
+!!?{\<stack-prefix>_gput_right:n}{tokens}
+!!?{\<stack-prefix>_gput_left:n}{tokens}
+!!?{\<stack-prefix>_gput_gpop:}{}
+\end{codesyntax}
+The !:{\<stack-prefix>_gpush:n} will push !:[marg]{tokens} (can be any number of tokens) into a global, private, stack. !:{\<stack-prefix>_gput_right:n,\<stack-prefix>_gput_left:n} will amend tokens to it, and !:{\<stack-prefix>_gpop:}, as the name implies, will insert the top of the stack into the input stream. That way it is possible to have a very fine control of what, where and when the items are collected and used.
+\end{codedescribe}
+
+
+\section{Stack variable variant}\label{def:globalstack-var}
+These are also defined in the package !:[pkg]{tokglobalstack}.
+
+\begin{codedescribe}{\globalstack_gset:N,\globalstack_gpush:Nn,\globalstack_gput_right:Nn,\globalstack_gput_left:Nn,\globalstack_gpop:N}
+\begin{codesyntax}%
+!!?{\globalstack_gset:N}{stack-var}
+!!?{\globalstack_gpush:Nn}{stack-var,tokens}
+!!?{\globalstack_gput_right:Nn}{stack-var,tokens}
+!!?{\globalstack_gput_left:Nn}{stack-var,tokens}
+!!?{\globalstack_gpop:N}{stack-var}
+\end{codesyntax}
+!:{\globalstack_gset:N} will globally create a stack variable named !:[marg]{stack-var} (a specialized token list variable). Once created it is possible to push tokens into it (!:{\globalstack_gpush:Nn}), amend tokens to the top (!:{\globalstack_gput_right:Nn,\globalstack_gput_left:Nn}) and pop those tokens (!:{\globalstack_gpop:N}) into the input stream. All assignments being global.
+\end{codedescribe}
+\begin{tsremark}[\color{red}Attention:]
+  This package defines a series of aliases, for definition continuity, as follow:
+  
+  \begin{tabular}{l@{ $\rightarrow$ }l}
+ !:{\xstacks_gset:N}  &   !:{\globalstack_new:N} \\
+ !:{\xstacks_gpush:Nn}  &   !:{\globalstack_gpush:Nn} \\
+ !:{\xstacks_gput_right:Nn}  &   !:{\globalstack_gput_right:Nn} \\
+ !:{\xstacks_gput_left:Nn}  &   !:{\globalstack_gput_left:Nn} \\
+ !:{\xstacks_gpop:N}  &   !:{\globalstack_gpop:N}
+  \end{tabular}
+  
 \end{tsremark}
 
 
 
 
-\section{Benchmarks and Final Thoughts}
+\section{Benchmarks and Final Thoughts}\label{benchmark}
 In the following, there is an exercise of \dots, better said, to evaluate the advantage/disadvantage of each approach, in an extreme case: multiple tokens, deeply nested groups. 
-The most effective strategy still is the after group one, a difference of just about  \emph{200 ops}, but, taking in account that the stack variants are mostly `constant time' (they don't depend on how deep the grouping is, but just how many operations (push/pop) are needed), in lighter cases there is no content.
+The most effective strategy is the stack command variant (see \ref{def:globalstack-cmd}): \emph{40 ops} (\ref{globalstack-cmd}) versus \emph{160} (\ref{groupmark-cmd}). In lighter cases, taking in account that the stack variants are mostly `constant time' (they don't depend on how deep the grouping is, but just how many operations (push/pop) are needed), the difference diminishes, but the stack command variant still comes first (\emph{20 ops} versus \emph{35 ops}).
 
-At the end, it's a case of flexibility/convenience versus performance. In case of the original problem, to save context past the end of a scope, the after group approach is the one. Now, if one needs a finer control of what/when (and not just preserving context past end of scope) the stack variants can have some use.
+At the end, it's a case of flexibility, convenience and programming style versus performance. In case of the original problem, to save context past the end of a scope, the stack approach is the fastest, but the after group variant doesn't lags much behind, while behaving much like the !:{\aftergroup} primite: tokens are promptly restored past the end of a local group (at the target group).
 
 \begin{codestore}[stack-bench]
 \fp_set:Nn \g_benchmark_duration_target_fp {20}
 \end{codestore}
 \begin{tsremark}
-  The after group variant is the fastest if using the !:{\if_int_compare:w} primitive. If instead, for reference, !:{\int_if_compare:nNnTF} is used, the number of \emph{ops} almost triple! Take a look at the code, the version with !:{\int_if_compare:nNnTF} is commented out.
+  About the after group variant, if !:{\int_if_compare:nNnTF} is used (instead of the primitive !:{\if_int_compare:w}), the number of \emph{ops} almost triple! Take a look at the code, the version with !:{\int_if_compare:nNnTF} is commented out.
 \end{tsremark}
 \begin{tsremark}
   Not really needed, but since one is at it, you can try (for more stable results) !:{\fp_set:Nn} !:{\g_benchmark_duration_target_fp} !![code]{{20}}\ldots
@@ -175,6 +226,7 @@ At the end, it's a case of flexibility/convenience versus performance. In case o
 
 \tsOff
 \begin{codestore}[stack-bench]
+
 \benchmark:n
   {
     \group_begin:
@@ -271,7 +323,57 @@ At the end, it's a case of flexibility/convenience versus performance. In case o
 
 
 \begin{codestore}[stack-bench]
-    \xstacks_cs_gset:N {myStack}
+    \groupmark_new:n {myMark}
+\benchmark:n
+  {
+    \group_begin:
+      \myMark_groupmark:      
+    {{  
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpc_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpc_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpc_bool   
+    {{
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpb_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpb_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpb_bool
+    {{
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+    {{
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+    {{
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+        \myMark_aftergroup:N \bool_set_true:N
+        \myMark_aftergroup:N \l__mytest_tmpa_bool
+    }} }} }}
+    }} }}
+    \group_end:
+  }
+\end{codestore}
+
+
+
+
+\begin{codestore}[stack-bench]
+    \globalstack_csnew:n {myStack}
 \benchmark:n
   {
     \group_begin:
@@ -307,185 +409,117 @@ At the end, it's a case of flexibility/convenience versus performance. In case o
         }
     }} }} }}
     }} }}
-      \myStack_gpop:     
+        \myStack_gpop:     
     \group_end:  
   }
 \end{codestore}
 
 
 \begin{codestore}[stack-bench]
-    \xstacks_gset:N \g_mytest_stack         
+    \globalstack_new:N \g_mytest_stack         
 \benchmark:n
   {
     \group_begin:
     {{
-        \xstacks_gpush:Nn \g_mytest_stack {
+        \globalstack_gpush:Nn \g_mytest_stack {
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool
         }
     {{
-        \xstacks_gput_right:Nn \g_mytest_stack {
+        \globalstack_gput_right:Nn \g_mytest_stack {
           \bool_set_true:N \l__mytest_tmpb_bool 
           \bool_set_true:N \l__mytest_tmpb_bool 
           \bool_set_true:N \l__mytest_tmpb_bool
         }
     {{
-        \xstacks_gput_right:Nn \g_mytest_stack {
+        \globalstack_gput_right:Nn \g_mytest_stack {
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool
         }
     {{
-        \xstacks_gput_right:Nn \g_mytest_stack {
+        \globalstack_gput_right:Nn \g_mytest_stack {
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool
         }
     {{
-        \xstacks_gput_right:Nn \g_mytest_stack {
+        \globalstack_gput_right:Nn \g_mytest_stack {
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool 
           \bool_set_true:N \l__mytest_tmpc_bool
         }
     }} }} }}
     }} }}
-      \xstacks_gpop:N   \g_mytest_stack    
+        \globalstack_gpop:N   \g_mytest_stack    
     \group_end:  
   }
 \end{codestore}
 
 
 \tsOn
-\subsection{Single mark, after group variant}
+\subsection{Single mark, after group variant}\label{xstacks-aftergroup}
 \tscode*[xstacks]{stack-bench}[2]
 On average, it took about \emph{160 ops} (\emph{430 ops} if using !:{\int_if_compare:nNnTF}). If `only' the 4 first groups, the average goes down to just \emph{35 ops} (\emph{90 ops} if using !:{\int_if_compare:nNnTF}). Obviously, the number of after groups raises exponentially, $2^n$, with the number of nested groups.
+\begin{tsremark}[\color{red}Attention:]
+  Again, these commands are to be considered \emph{deprecated}. They are less effective and flexible than !:{\groupmark_new:n} (from package !:[pkg]{tokgroupmark}).
+\end{tsremark}
 
-\subsection{Multiple marks, after group variant}
+\subsection{Multiple marks, after group variant}\label{xstacks-aftergroup-int}
 \tscode*[xstacks]{stack-bench}[3]
 On average, it took about \emph{200 ops} (\emph{480 ops} if using !:{\int_if_compare:nNnTF}).  If `only' the 4 first groups, the average goes down to just \emph{45 ops} (\emph{95 ops} if using !:{\int_if_compare:nNnTF}). Likewise, the number of after groups raises exponentially, $2^n$, with the number of nested groups (more expensive than the previous one because of the extra integer that has to be carried on).
+\begin{tsremark}[\color{red}Attention:]
+  Again, these commands are to be considered \emph{deprecated}. They are less effective and flexible than !:{\groupmark_new:n} (from package !:[pkg]{tokgroupmark}).
+\end{tsremark}
 
-\subsection{Stack command variant}
+
+\subsection{Custom group mark commands variant}\label{groupmark-cmd}
 \tscode*[xstacks]{stack-bench}[4]
-On average, it took about \emph{405 ops}.  If `only' the 4 first groups, the average goes down to about \emph{195 ops}. All operations, !:{\myStack_gpush:n, \myStack_gput_right:n, \myStack_gpop:} are, more or less, equally expensive.
+On average, it took about \emph{160 ops} (\emph{430 ops} if using !:{\int_if_compare:nNnTF}). If `only' the 4 first groups, the average goes down to just \emph{35 ops} (\emph{90 ops} if using !:{\int_if_compare:nNnTF}). Obviously, the number of after groups raises exponentially, $2^n$, with the number of nested groups.
 
-\subsection{Stack variable variant}
+This has, naturally,  the same performance/behaviour as \ref{xstacks-aftergroup}, but with the flexibility of \ref{xstacks-aftergroup-int}.
+
+
+\subsection{Stack command variant}\label{globalstack-cmd}
 \tscode*[xstacks]{stack-bench}[5]
-On average, it took about \emph{310 ops}. If `only' the 4 first groups, the average remains about \emph{290 ops}. The !:{\xstacks_gpush:Nn,\xstacks_gpop:N} are the most expensive operations in this case.
+
+On average, it took about \emph{40 ops}.  If `only' the 4 first groups, the average goes down to about \emph{22 ops}. All operations, !:{\myStack_gpush:n, \myStack_gput_right:n, \myStack_gpop:} are, more or less, equally expensive.
+
+
+The original implementation (version 1.0a) took, on average,  about \emph{405 ops}.  If `only' the 4 first groups, the average was about \emph{195 ops}. What's the difference? Using just \tsobj{\int_use:N} instead of \tsobj{\int_to_Alph:n} when creating internal variables (with \tsobj{\csname}) to save the tokens.
+
+\subsection{Stack variable variant}\label{globalstack-var}
+\tscode*[xstacks]{stack-bench}[6]
+On average, it took about \emph{50 ops}.  If `only' the 4 first groups, the average goes down to about \emph{30 ops}.  The !:{\globalstack_gpush:Nn,\globalstack_gpop:N} are somewhat the more expensive operations. 
+
+
+The original implementation (version 1.0a) took, on average, about \emph{310 ops}. If `only' the 4 first groups, the average remained about \emph{290 ops}. What's the difference? Using just \tsobj{\int_use:N} instead of \tsobj{\int_to_Alph:n} when creating internal variables  (with \tsobj{\csname})  to save the tokens.
+
 \tsOff
 %
+
 %\ExplSyntaxOn
 %\tsexec{stack-bench}[1]
 %\tsexec{stack-bench}[2]
 %\tsexec{stack-bench}[3]
 %\tsexec{stack-bench}[4]
 %\tsexec{stack-bench}[5]
+%\tsexec{stack-bench}[6]
 %\ExplSyntaxOff
 
 
 %% if needed
 \printbibliography
 
-\begin{codestore}[stack-test]
-\ExplSyntaxOn
-  \bool_new:N \l__mytest_tmpa_bool
-  \bool_new:N \l__mytest_tmpb_bool
-  \bool_new:N \l__mytest_tmpc_bool
-  \cs_new:Npn \mytest_show_bools:n #1
-    { \underline{#1:}\par
-      \bool_if:NTF \l__mytest_tmpa_bool {{\color{red}a~true}}{a~false}  \par
-      \bool_if:NTF \l__mytest_tmpb_bool {{\color{red}b~true}}{b~false}  \par
-      \bool_if:NTF \l__mytest_tmpc_bool {{\color{red}c~true}}{c~false}  \par
-    }
-\ExplSyntaxOff
-\end{codestore}
 
-\begin{codestore}[stack-test]
-\ExplSyntaxOn
-    \group_begin:
-      \xstacks_groupmark:      
-    {{  \xstacks_aftergroup:N \bool_set_true:N
-        \xstacks_aftergroup:N \l__mytest_tmpa_bool
-    {{  \xstacks_aftergroup:N \bool_set_true:N
-        \xstacks_aftergroup:N \l__mytest_tmpb_bool
-        \mytest_show_bools:n {T1}  
-    }}}}
-      \mytest_show_bools:n {T2}
-    \group_end:
-\ExplSyntaxOff
-\end{codestore}
+% 159 191 154 46.2 50.5
+% 131 203 157 36.6 56.2
+% 160 194 155 37.8 52
 
-
-\begin{codestore}[stack-test]
-\ExplSyntaxOn
-    \int_new:N \myMark_int
-    \group_begin:
-      \xstacks_groupmark:N \myMark_int      
-    {{  \xstacks_aftergroup:NN 
-          \myMark_int \bool_set_true:N
-        \xstacks_aftergroup:NN 
-          \myMark_int \l__mytest_tmpa_bool
-    {{  \xstacks_aftergroup:NN 
-          \myMark_int \bool_set_true:N
-        \xstacks_aftergroup:NN 
-          \myMark_int \l__mytest_tmpb_bool
-        \mytest_show_bools:n {T1}   
-    }}}}
-      \mytest_show_bools:n {T2}
-    \group_end:
-\ExplSyntaxOff
-\end{codestore}
+% 33.9 42 34.5 21.4 29.7
+% 34.2 42 35.2 21.7 29.9
 
 
 
-\begin{codestore}[stack-test]
-\ExplSyntaxOn
-    \group_begin:
-      \xstacks_cs_gset:N {myStack}       
-    {{  \myStack_gpush:n 
-          {\bool_set_true:N \l__mytest_tmpa_bool}
-    {{  \myStack_gput_right:n 
-          {\bool_set_true:N \l__mytest_tmpb_bool}
-        \mytest_show_bools:n {T1}   
-    }}}}
-      \myStack_gpop:     
-      \mytest_show_bools:n {T2}
-    \group_end:  
-\ExplSyntaxOff
-\end{codestore}
-
-
-\begin{codestore}[stack-test]
-\ExplSyntaxOn
-    \group_begin:
-      \xstacks_gset:N \g_mytest_stack           
-    {{  \xstacks_gpush:Nn \g_mytest_stack 
-          {\bool_set_true:N \l__mytest_tmpa_bool}
-    {{  \xstacks_gput_right:Nn \g_mytest_stack 
-          {\bool_set_true:N \l__mytest_tmpb_bool}
-        \mytest_show_bools:n {T1}   
-    }}}}
-      \xstacks_gpop:N   \g_mytest_stack    
-      \mytest_show_bools:n {T2}
-    \group_end:  
-\ExplSyntaxOff
-\end{codestore}
-
-\newpage
-\section{Addendum}  
-A quick test \dots
-\tsexec{stack-test}[1]
-\tscode*[xstacks]{stack-test}[1]
-\tsdemo[xstacks]{stack-test}[2]
-\tsdemo[xstacks]{stack-test}[3]
-\tsdemo[xstacks]{stack-test}[4]
-\tsdemo[xstacks]{stack-test}[5]
-
-%
-%\ExplSyntaxOn
-%\cs_show:N \int_compare:nNnTF
-%\cs_show:N\__int_eval:w
-%\cs_show:N \if_int_compare:w
-%\cs_show:N \int_gincr:N
-%\ExplSyntaxOff
 \end{document} 

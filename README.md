@@ -9,7 +9,7 @@ For more details,  see the documentation,
 --------------
 
 ## Requirements
-* none besides a fairly recent LaTeX distribution as recent as [2023/11/01]
+* none besides a fairly recent LaTeX distribution as recent as [2025/06/01](https://ctan.org/pkg/l3kernel)
 
 ## Installation
 The stable version is available at [CTAN](https://ctan.org/pkg/xstacks).
@@ -64,5 +64,9 @@ The Current Maintainer of this work is Alceu Frigeri
 
 ### Change log
 
-* Version 1.0/1.0a (this)
+* Version 1.1 (this)
+    - documentation update: two derived packages `tokgroupmark` and `tokglobalstack` 
+    - including: `\groupmark_new:n` (from `tokgroupmark`)
+
+* Version 1.0/1.0a 
     - Initial setup/release.
